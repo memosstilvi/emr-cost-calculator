@@ -1,0 +1,13 @@
+---
+prices:
+    c1.medium: 0.130
+    c1.xlarge: 0.520
+    c3.xlarge: 0.299
+    m1.small: 0.044
+    m1.medium: 0.087
+    m1.large: 0.175
+    m1.xlarge: 0.350
+    m2.xlarge: 0.245
+    m2.4xlarge: 0.980
+    m3.xlarge: 0.368
+    r3.2xlarge: 0.910
