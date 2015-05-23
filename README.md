@@ -24,6 +24,12 @@ It currently support two operations:
 2. Get the cost of an EMR cluster given the cluster id
   * `emr_cost_calculator.py cluster --region=<The region you launched your clusters in> --cluster_id=<j-xxxxxxxxxxxx>`
 
+####On demand prices
+
+Since Amazon doesn’t provide the on_demand prices for each instance type through an API, the only way to dynamically retrieving those prices would be to scrape the Amazon website.
+for convenience, and since those prices do not change very often, we chose to store them in a yaml file. this list is not complete and only contains the instance types that we 
+were interested in.
+
 ###License
 
 Distributed under the MIT license. See `LICENSE` for more information.
