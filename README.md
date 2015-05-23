@@ -4,8 +4,7 @@
 
 Given that Amazon doesn’t provide a straightforward solution to calculate the cost of an EMR workflow, this module aims to calculate the cost of an EMR workflow given a period of days,
 or the cost of a single cluster given the cluster id. The simple way to do that would be to use the information given by the JobFLow method of the boto.emr module. However, this method 
-doesn’t return any information about the Task nodes of a cluster, and whether or not spot instances were used. Therefore it is impossible to use this method to calculate the cost for
-workflow that use spot instances and task nodes.
+doesn’t return any information about the Task nodes of a cluster, and whether or not spot instances were used. 
 
 This cost calculator takes care of both. In case spot instances were used, the spot_price is retrieved by the corresponding field of the InstanceGroup emrobject. This figure corersponds 
 to the bidprice and this is the price we use in order to calculate the total cost. In many cases however (and depending on your bidding policy) this might not be the final price that you 
