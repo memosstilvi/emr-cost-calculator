@@ -14,8 +14,6 @@ accordingly. However, this approach adds a lot of complexity and in case that yo
 
 ###How it works
 
-In order for this module to work you need to have your EC2 key value pair stored in your .bashrc file so that boto can connect to the AWS EMR API.
-
 This module is using [docopt](http://docopt.org/) in order to parse command line arguments.
 
 It currently support two operations:
@@ -23,6 +21,12 @@ It currently support two operations:
   * `emr_cost_calculator.py total --region=<The region you launched your clusters in> --created_after=<YYYY-MM-DD> --created_before=<YYYY-MM-DD>`
 2. Get the cost of an EMR cluster given the cluster id
   * `emr_cost_calculator.py cluster --region=<The region you launched your clusters in> --cluster_id=<j-xxxxxxxxxxxx>`
+
+In both cases the aws_access_key_id and the aws_secret_access_key, which are required to connect to the AWS EMR API,
+can be passed as parameters to the script. Alternatively, you can set the environment variables:
+
+`AWS_ACCESS_KEY_ID - Your AWS Access Key ID 
+AWS_SECRET_ACCESS_KEY - Your AWS Secret Access Key`
 
 ####On demand prices
 

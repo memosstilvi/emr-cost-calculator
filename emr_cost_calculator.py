@@ -1,19 +1,30 @@
 """EMR cost calculator
 
 Usage:
-    emr_cost_calculator.py total --region=<reg> --created_after=<ca> --created_before=<cb>
-    emr_cost_calculator.py cluster --region=<reg> --cluster_id=<ci>
+    emr_cost_calculator.py total --region=<reg> \
+--created_after=<ca> --created_before=<cb> \
+[--aws_access_key_id=<ai> --aws_secret_access_key=<ak>]
+    emr_cost_calculator.py cluster --region=<reg> --cluster_id=<ci> \
+[--aws_access_key_id=<ai> --aws_secret_access_key=<ak>]
     emr_cost_calculator.py -h | --help
 
 
 Options:
-    -h --help               Show this screen
-    total                   Calculate the total EMR cost for a period of time
-    cluster                 Calculate the cost of single cluster given the cluster id
-    --region=<reg>          The aws region that the cluster was launched on
-    --created_after=<ca>    The calculator will compute the cost for all the cluster created after the created_after day
-    --created_before=<cb>   The calculator will compute the cost for all the cluster created before the created_before day
-    --cluster_id=<ci>       The id of the cluster you want to calculate the cost for
+    -h --help                     Show this screen
+    total                         Calculate the total EMR cost \
+for a period of time
+    cluster                       Calculate the cost of single \
+cluster given the cluster id
+    --region=<reg>                The aws region that the \
+cluster was launched on
+    --aws_access_key_id=<ai>      Self-explanatory
+    --aws_secret_access_key=<ci>  Self-explanatory
+    --created_after=<ca>          The calculator will compute \
+the cost for all the cluster created after the created_after day
+    --created_before=<cb>         The calculator will compute \
+the cost for all the cluster created before the created_before day
+    --cluster_id=<ci>             The id of the cluster you want to \
+calculate the cost for
 """
 
 from docopt import docopt
@@ -29,6 +40,7 @@ import datetime
 config = yaml.load(open('config.yml', 'r'))
 prices = config['prices']
 
+
 def validate_date(date_text):
     try:
         return datetime.datetime.strptime(date_text, '%Y-%m-%d')
@@ -38,7 +50,8 @@ def validate_date(date_text):
 
 def retry_if_EmrResponseError(exception):
     """
-    Use this function in order to back off only on EmrResponse errors and not in other exceptions
+    Use this function in order to back off only
+    on EmrResponse errors and not in other exceptions
     """
     return isinstance(exception, boto.exception.EmrResponseError)
 
@@ -57,8 +70,10 @@ class Ec2Instance:
         :return: the lifetime of a single instance in hours
         """
         date_format = '%Y-%m-%dT%H:%M:%S.%fZ'
-        creation_ts = time.mktime(time.strptime(creation_ts, date_format))
-        termination_ts = time.mktime(time.strptime(termination_ts, date_format))
+        creation_ts = \
+            time.mktime(time.strptime(creation_ts, date_format))
+        termination_ts = \
+            time.mktime(time.strptime(termination_ts, date_format))
         return creation_ts, termination_ts
 
     def _get_lifetime(self, creation_ts, termination_ts):
@@ -67,47 +82,48 @@ class Ec2Instance:
         :param termination_ts: the termination time string
         :return: the lifetime of a single instance in hours
         """
-        (creation_ts, termination_ts) = Ec2Instance._parse_dates(creation_ts, termination_ts)
+        (creation_ts, termination_ts) = \
+            Ec2Instance._parse_dates(creation_ts, termination_ts)
         return math.ceil((termination_ts - creation_ts) / 3600)
 
 
 class InstanceGroup:
 
-    def __init__(self, group_id, instance_type, group_type, group_market):
+    def __init__(self, group_id, instance_type, group_type):
         self.group_id = group_id
         self.instance_type = instance_type
         self.group_type = group_type
-        self.group_market = group_market
         self.price = 0
 
 
 class EmrCostCalculator:
 
-    def __init__(self, region):
-        """
-        :param cluster_id
-        :param force_no_spot: This flag is used in case we want the ON_DEMAND price of a cluster
-                even though spot instances were used. This is useful when we want to estimate
-                the profit of using spot instances
-        :region
-        """
+    def __init__(self, region, aws_access_key_id=None, aws_secret_access_key=None):
         try:
             print >> sys.stderr, \
                 '[INFO] Retrieving cost in region %s' \
                 % (region)
-            self.conn = boto.emr.connect_to_region(region)
+            self.conn = \
+                boto.emr.connect_to_region(
+                    region,
+                    aws_access_key_id=aws_access_key_id,
+                    aws_secret_access_key=aws_secret_access_key)
             self.spot_used = False
         except:
-            print >> sys.stderr, '[ERROR] Could not establish connection with EMR api'
+            print >> sys.stderr, \
+                '[ERROR] Could not establish connection with EMR api'
 
     def get_total_cost_by_dates(self, created_after, created_before):
         total_cost = 0
-        for cluster_id in self._get_cluster_list(created_after, created_before):
+        for cluster_id in \
+                self._get_cluster_list(created_after, created_before):
             cost_dict = self.get_cluster_cost(cluster_id)
             total_cost += cost_dict['TOTAL']
         return total_cost
 
-    @retry(wait_exponential_multiplier=1000, wait_exponential_max=7000, retry_on_exception=retry_if_EmrResponseError)
+    @retry(wait_exponential_multiplier=1000,
+           wait_exponential_max=7000,
+           retry_on_exception=retry_if_EmrResponseError)
     def get_cluster_cost(self, cluster_id):
         """
         Joins the information from the instance groups and the instances
@@ -133,24 +149,27 @@ class EmrCostCalculator:
     def _sanitise_floats(aDict):
         """
         Round the values to 3 decimals.
-        #Did it this way to avoid https://docs.python.org/2/tutorial/floatingpoint.html#representation-error
+        #Did it this way to avoid
+        https://docs.python.org/2/tutorial/floatingpoint.html#representation-error
         """
         for key in aDict:
             aDict[key] = round(aDict[key], 3)
         return aDict
 
-
     def _get_cluster_list(self, created_after, created_before):
         """
         :return: An iterator of cluster ids for the specified dates
         """
-        marker=None
+        marker = None
         while True:
-            cluster_list = self.conn.list_clusters(created_after, created_before, marker=marker)
+            cluster_list = \
+                self.conn.list_clusters(created_after,
+                                        created_before,
+                                        marker=marker)
             for cluster in cluster_list.clusters:
                 yield cluster.id
             try:
-                marker=cluster_list.marker
+                marker = cluster_list.marker
             except AttributeError:
                 break
 
@@ -162,10 +181,9 @@ class EmrCostCalculator:
         groups = self.conn.list_instance_groups(cluster_id).instancegroups
         instance_groups = []
         for group in groups:
-            inst_group = InstanceGroup(group.id, \
-                                       group.instancetype, \
-                                       group.instancegrouptype, \
-                                       group.market)
+            inst_group = InstanceGroup(group.id,
+                                       group.instancetype,
+                                       group.instancegrouptype)
             # If is is a spot instance get the bidprice
             if group.market == 'SPOT':
                 inst_group.price = float(group.bidprice)
@@ -176,31 +194,42 @@ class EmrCostCalculator:
 
     def _get_instances(self, instance_group, cluster_id):
         """
-        Invokes the EMR api to retrieve a list of all the instances that were used in the cluster.
-        This list is then joind to the InstanceGroup list on the instance group id
+        Invokes the EMR api to retrieve a list of all the instances
+        that were used in the cluster.
+        This list is then joind to the InstanceGroup list
+        on the instance group id
         :return: An iterator of our custom Ec2Instance objects.
         """
-        instance_list = self.conn.list_instances(cluster_id, \
-                                                 instance_group.group_id).instances
+        instance_list = \
+            self.conn.list_instances(cluster_id, instance_group.group_id)\
+            .instances
         for instance_info in instance_list:
             try:
-                inst = Ec2Instance(instance_info.status.timeline.creationdatetime, \
-                                instance_info.status.timeline.enddatetime, \
-                                instance_group.price)
+                inst = Ec2Instance(
+                            instance_info.status.timeline.creationdatetime,
+                            instance_info.status.timeline.enddatetime,
+                            instance_group.price)
                 yield inst
             except AttributeError:
-                print >> sys.stderr, '[WARN] Error while calculating instance cost for cluster %s' % cluster_id
+                print >> sys.stderr, \
+                    '[WARN] Error when computing instance cost. Cluster: %s'\
+                    % cluster_id
 
 
 if __name__ == '__main__':
     args = docopt(__doc__)
     if args.get('total'):
-        created_after = validate_date(args.get('--created_after'))
-        created_before = validate_date(args.get('--created_before'))
-        calc = EmrCostCalculator(args.get('--region'))
-        print calc.get_total_cost_by_dates(created_after, created_before)
+       created_after = validate_date(args.get('--created_after'))
+       created_before = validate_date(args.get('--created_before'))
+       calc = EmrCostCalculator(args.get('--region'),
+                                args.get('--aws_access_key_id'),
+                                args.get('--aws_secret_access_key'))
+       print calc.get_total_cost_by_dates(created_after, created_before)
     elif args.get('cluster'):
-        calc = EmrCostCalculator(args.get('--region'))
-        print calc.get_cluster_cost(args.get('--cluster_id'))
+       calc = EmrCostCalculator(args.get('--region'),
+                                args.get('--aws_access_key_id'),
+                                args.get('--aws_secret_access_key'))
+       print calc.get_cluster_cost(args.get('--cluster_id'))
     else:
-        print >> sys.stderr, '[ERROR] Invalid operation, please check usage again'
+       print >> sys.stderr, \
+       '[ERROR] Invalid operation, please check usage again'
