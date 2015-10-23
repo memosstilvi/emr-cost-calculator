@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """EMR cost calculator
 
 Usage:
@@ -205,15 +206,20 @@ class EmrCostCalculator:
             .instances
         for instance_info in instance_list:
             try:
+                end_date_time = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                if hasattr(instance_info.status.timeline, 'enddatetime'):
+                    end_date_time = instance_info.status.timeline.enddatetime
+
                 inst = Ec2Instance(
                             instance_info.status.timeline.creationdatetime,
-                            instance_info.status.timeline.enddatetime,
+                            end_date_time,
                             instance_group.price)
                 yield inst
-            except AttributeError:
+            except AttributeError as e:
                 print >> sys.stderr, \
                     '[WARN] Error when computing instance cost. Cluster: %s'\
                     % cluster_id
+                print >> sys.stderr, e
 
 
 if __name__ == '__main__':
@@ -226,6 +232,7 @@ if __name__ == '__main__':
                                 args.get('--aws_secret_access_key'))
        print calc.get_total_cost_by_dates(created_after, created_before)
     elif args.get('cluster'):
+       print args.get('--region')
        calc = EmrCostCalculator(args.get('--region'),
                                 args.get('--aws_access_key_id'),
                                 args.get('--aws_secret_access_key'))

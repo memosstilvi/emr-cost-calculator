@@ -11,3 +11,5 @@ prices:
     m2.4xlarge: 0.980
     m3.xlarge: 0.368
     r3.2xlarge: 0.910
+    r3.4xlarge: 1.400
+    r3.8xlarge: 2.8
