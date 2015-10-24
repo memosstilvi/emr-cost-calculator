@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """EMR cost calculator
 
 Usage:
@@ -205,15 +206,20 @@ class EmrCostCalculator:
             .instances
         for instance_info in instance_list:
             try:
+                end_date_time = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                if hasattr(instance_info.status.timeline, 'enddatetime'):
+                    end_date_time = instance_info.status.timeline.enddatetime
+
                 inst = Ec2Instance(
                             instance_info.status.timeline.creationdatetime,
-                            instance_info.status.timeline.enddatetime,
+                            end_date_time,
                             instance_group.price)
                 yield inst
-            except AttributeError:
+            except AttributeError as e:
                 print >> sys.stderr, \
                     '[WARN] Error when computing instance cost. Cluster: %s'\
                     % cluster_id
+                print >> sys.stderr, e
 
 
 if __name__ == '__main__':
