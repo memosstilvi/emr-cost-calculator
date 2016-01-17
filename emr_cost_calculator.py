@@ -201,9 +201,15 @@ class EmrCostCalculator:
         on the instance group id
         :return: An iterator of our custom Ec2Instance objects.
         """
-        instance_list = \
-            self.conn.list_instances(cluster_id, instance_group.group_id)\
-            .instances
+        instance_list = []
+        marker = None
+        while True:
+            batch = self.conn.list_instances(cluster_id, instance_group.group_id, marker=marker)
+            instance_list.extend(batch.instances)
+            try:
+                marker = batch.marker
+            except AttributeError:
+                break
         for instance_info in instance_list:
             try:
                 end_date_time = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
