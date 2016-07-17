@@ -37,10 +37,8 @@ import math
 import yaml
 import datetime
 
-
 config = yaml.load(open('config.yml', 'r'))
 prices = config['prices']
-
 
 def validate_date(date_text):
     try:
@@ -48,14 +46,12 @@ def validate_date(date_text):
     except ValueError:
        raise ValueError('Incorrect data format, should be YYYY-MM-DD')
 
-
 def retry_if_EmrResponseError(exception):
     """
     Use this function in order to back off only
     on EmrResponse errors and not in other exceptions
     """
     return isinstance(exception, boto.exception.EmrResponseError)
-
 
 class Ec2Instance:
 
@@ -87,7 +83,6 @@ class Ec2Instance:
             Ec2Instance._parse_dates(creation_ts, termination_ts)
         return math.ceil((termination_ts - creation_ts) / 3600)
 
-
 class InstanceGroup:
 
     def __init__(self, group_id, instance_type, group_type):
@@ -95,7 +90,6 @@ class InstanceGroup:
         self.instance_type = instance_type
         self.group_type = group_type
         self.price = 0
-
 
 class EmrCostCalculator:
 
@@ -189,7 +183,8 @@ class EmrCostCalculator:
             if group.market == 'SPOT':
                 inst_group.price = float(group.bidprice)
             else:
-                inst_group.price = prices[group.instancetype]
+                inst_group.price = prices[group.instancetype]['ec2'] + \
+                    prices[group.instancetype]['emr']
             instance_groups.append(inst_group)
         return instance_groups
 
@@ -226,7 +221,6 @@ class EmrCostCalculator:
                     '[WARN] Error when computing instance cost. Cluster: %s'\
                     % cluster_id
                 print >> sys.stderr, e
-
 
 if __name__ == '__main__':
     args = docopt(__doc__)
