@@ -40,11 +40,13 @@ import datetime
 config = yaml.load(open('config.yml', 'r'))
 prices = config['prices']
 
+
 def validate_date(date_text):
     try:
         return datetime.datetime.strptime(date_text, '%Y-%m-%d')
     except ValueError:
-       raise ValueError('Incorrect data format, should be YYYY-MM-DD')
+        raise ValueError('Incorrect data format, should be YYYY-MM-DD')
+
 
 def retry_if_EmrResponseError(exception):
     """
@@ -52,6 +54,7 @@ def retry_if_EmrResponseError(exception):
     on EmrResponse errors and not in other exceptions
     """
     return isinstance(exception, boto.exception.EmrResponseError)
+
 
 class Ec2Instance:
 
@@ -109,7 +112,8 @@ class EmrCostCalculator:
                 boto.emr.connect_to_region(
                     region,
                     aws_access_key_id=aws_access_key_id,
-                    aws_secret_access_key=aws_secret_access_key)
+                    aws_secret_access_key=aws_secret_access_key
+                )
             self.spot_used = False
         except:
             print >> sys.stderr, \
@@ -123,9 +127,11 @@ class EmrCostCalculator:
             total_cost += cost_dict['TOTAL']
         return total_cost
 
-    @retry(wait_exponential_multiplier=1000,
-           wait_exponential_max=7000,
-           retry_on_exception=retry_if_EmrResponseError)
+    @retry(
+        wait_exponential_multiplier=1000,
+        wait_exponential_max=7000,
+        retry_on_exception=retry_if_EmrResponseError
+    )
     def get_cluster_cost(self, cluster_id):
         """
         Joins the information from the instance groups and the instances
@@ -165,9 +171,11 @@ class EmrCostCalculator:
         marker = None
         while True:
             cluster_list = \
-                self.conn.list_clusters(created_after,
-                                        created_before,
-                                        marker=marker)
+                self.conn.list_clusters(
+                    created_after,
+                    created_before,
+                    marker=marker
+                )
             for cluster in cluster_list.clusters:
                 yield cluster.id
             try:
@@ -183,9 +191,11 @@ class EmrCostCalculator:
         groups = self.conn.list_instance_groups(cluster_id).instancegroups
         instance_groups = []
         for group in groups:
-            inst_group = InstanceGroup(group.id,
-                                       group.instancetype,
-                                       group.instancegrouptype)
+            inst_group = InstanceGroup(
+                group.id,
+                group.instancetype,
+                group.instancegrouptype
+            )
             # If is is a spot instance get the bidprice
             if group.market == 'SPOT':
                 inst_group.price = float(group.bidprice)
@@ -225,9 +235,10 @@ class EmrCostCalculator:
                     end_date_time = instance_info.status.timeline.enddatetime
 
                 inst = Ec2Instance(
-                            instance_info.status.timeline.creationdatetime,
-                            end_date_time,
-                            instance_group.price)
+                    instance_info.status.timeline.creationdatetime,
+                    end_date_time,
+                    instance_group.price
+                )
                 yield inst
             except AttributeError as e:
                 print >> sys.stderr, \
