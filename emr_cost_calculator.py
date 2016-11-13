@@ -83,6 +83,7 @@ class Ec2Instance:
             Ec2Instance._parse_dates(creation_ts, termination_ts)
         return math.ceil((termination_ts - creation_ts) / 3600)
 
+
 class InstanceGroup:
 
     def __init__(self, group_id, instance_type, group_type):
@@ -91,9 +92,15 @@ class InstanceGroup:
         self.group_type = group_type
         self.price = 0
 
+
 class EmrCostCalculator:
 
-    def __init__(self, region, aws_access_key_id=None, aws_secret_access_key=None):
+    def __init__(
+        self,
+        region,
+        aws_access_key_id=None,
+        aws_secret_access_key=None
+    ):
         try:
             print >> sys.stderr, \
                 '[INFO] Retrieving cost in region %s' \
@@ -199,7 +206,11 @@ class EmrCostCalculator:
         instance_list = []
         marker = None
         while True:
-            batch = self.conn.list_instances(cluster_id, instance_group.group_id, marker=marker)
+            batch = self.conn.list_instances(
+                cluster_id,
+                instance_group.group_id,
+                marker=marker
+            )
             instance_list.extend(batch.instances)
             try:
                 marker = batch.marker
@@ -207,7 +218,9 @@ class EmrCostCalculator:
                 break
         for instance_info in instance_list:
             try:
-                end_date_time = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                end_date_time = datetime.datetime \
+                    .now() \
+                    .strftime('%Y-%m-%dT%H:%M:%S.%fZ')
                 if hasattr(instance_info.status.timeline, 'enddatetime'):
                     end_date_time = instance_info.status.timeline.enddatetime
 
@@ -225,17 +238,21 @@ class EmrCostCalculator:
 if __name__ == '__main__':
     args = docopt(__doc__)
     if args.get('total'):
-       created_after = validate_date(args.get('--created_after'))
-       created_before = validate_date(args.get('--created_before'))
-       calc = EmrCostCalculator(args.get('--region'),
-                                args.get('--aws_access_key_id'),
-                                args.get('--aws_secret_access_key'))
-       print calc.get_total_cost_by_dates(created_after, created_before)
+        created_after = validate_date(args.get('--created_after'))
+        created_before = validate_date(args.get('--created_before'))
+        calc = EmrCostCalculator(
+            args.get('--region'),
+            args.get('--aws_access_key_id'),
+            args.get('--aws_secret_access_key')
+        )
+        print calc.get_total_cost_by_dates(created_after, created_before)
     elif args.get('cluster'):
-       calc = EmrCostCalculator(args.get('--region'),
-                                args.get('--aws_access_key_id'),
-                                args.get('--aws_secret_access_key'))
-       print calc.get_cluster_cost(args.get('--cluster_id'))
+        calc = EmrCostCalculator(
+            args.get('--region'),
+            args.get('--aws_access_key_id'),
+            args.get('--aws_secret_access_key')
+        )
+        print calc.get_cluster_cost(args.get('--cluster_id'))
     else:
-       print >> sys.stderr, \
-       '[ERROR] Invalid operation, please check usage again'
+        print >> sys.stderr, \
+            '[ERROR] Invalid operation, please check usage again'
