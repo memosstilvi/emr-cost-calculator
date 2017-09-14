@@ -1,6 +1,6 @@
-##EMR Cost Calculator
+## EMR Cost Calculator
 
-####A simple python module that calculates the cost of a single or a group of EMR clusters.
+#### A simple python module that calculates the cost of a single or a group of EMR clusters.
 
 Given that Amazon doesn’t provide a straightforward solution to calculate the cost of an EMR workflow, this module aims to calculate the cost of an EMR workflow given a period of days,
 or the cost of a single cluster given the cluster id. The simple way to do that would be to use the information given by the JobFLow method of the boto.emr module. However, this method
@@ -12,7 +12,7 @@ pay for the instances (for more information about the amazon spot instance marke
 is the current minimum bidprice (that has been granted instances) a more accurate approach would require to monitor the minimum bid price while the cluster is alive and adjust the cluster cost
 accordingly. However, this approach adds a lot of complexity and in case that your bidding prices are not extremely higher than the minimum bid price, our current approach is accurate enough.
 
-###How it works
+### How it works
 
 This module is using [docopt](http://docopt.org/) in order to parse command line arguments.
 
@@ -30,12 +30,12 @@ can be passed as parameters to the script. Alternatively, you can set the enviro
 `AWS_ACCESS_KEY_ID - Your AWS Access Key ID
 AWS_SECRET_ACCESS_KEY - Your AWS Secret Access Key`
 
-####On demand prices
+#### On demand prices
 
 Since Amazon doesn’t provide the on_demand prices for each instance type through an API, the only way to dynamically retrieving those prices would be to scrape the Amazon website.
 for convenience, and since those prices do not change very often, we chose to store them in a yaml file. this list is not complete and only contains the instance types that we
 were interested in.
 
-###License
+### License
 
 Distributed under the MIT license. See `LICENSE` for more information.
